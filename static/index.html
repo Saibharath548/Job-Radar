@@ -1,32 +1,33 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>JobRadar</title><link rel="stylesheet" href="/style.css">
-</head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JobRadar</title><link rel="stylesheet" href="/style.css"></head>
 <body>
 <header><div><span class="eyebrow">PERSONAL CAREER WORKSPACE</span><h1>JobRadar</h1>
-<p>One place to review game-development opportunities.</p></div><span class="pill">Free-first MVP</span></header>
+<p>Discover and track game-development opportunities.</p></div><span class="pill">Free-first MVP</span></header>
 <main>
 <section class="stats">
 <article><small>Jobs collected</small><strong id="total">0</strong></article>
 <article><small>Strong matches (70%+)</small><strong id="strong">0</strong></article>
-<article><small>Applications in progress</small><strong id="progress">0</strong></article>
+<article><small>Applications in progress</small><strong id="progress">0</strong></article></section>
+<section class="discover panel">
+<div><h2>Find new opportunities</h2><p>Searches public remote listings and saves matching results to your tracker.</p></div>
+<button id="discoverBtn">Discover jobs now</button><p id="discoverMessage" class="muted" aria-live="polite"></p>
+<div class="source-links"><b>Search other platforms</b>
+<a target="_blank" rel="noopener" href="https://www.linkedin.com/jobs/search/?keywords=Unity%20Developer%20OR%20Gameplay%20Programmer&location=India">LinkedIn</a>
+<a target="_blank" rel="noopener" href="https://in.indeed.com/jobs?q=unity+developer+OR+gameplay+programmer&l=India">Indeed</a>
+<a target="_blank" rel="noopener" href="https://www.naukri.com/unity-developer-jobs">Naukri</a>
+<a target="_blank" rel="noopener" href="https://internshala.com/internships/game%20development-internship/">Internshala</a>
+<a target="_blank" rel="noopener" href="https://hitmarker.net/jobs">Hitmarker</a></div>
 </section>
 <section class="toolbar"><div><h2>Opportunity tracker</h2><p>Ranked against your Unity/gameplay profile.</p></div>
 <input id="search" placeholder="Search title, company, skills…"></section>
-<section class="panel"><h3>Add a job manually</h3>
-<form id="jobForm">
-<input name="title" placeholder="Job title *" required>
-<input name="company" placeholder="Company">
-<input name="location" placeholder="Location / remote">
-<input name="source" placeholder="Source" value="Manual">
-<input name="url" placeholder="Job URL">
-<textarea name="description" placeholder="Paste job description for a better match score"></textarea>
-<button>Add opportunity</button>
-</form></section>
+<section class="panel"><h3>Add a job manually</h3><form id="jobForm">
+<input name="title" placeholder="Job title *" required><input name="company" placeholder="Company">
+<input name="location" placeholder="Location / remote"><input name="source" placeholder="Source" value="Manual">
+<input name="url" placeholder="Job URL"><textarea name="description" placeholder="Paste job description for a better match score"></textarea>
+<button>Add opportunity</button></form></section>
 <section id="jobs" class="jobs"><div class="empty">Loading…</div></section>
-<section class="note"><b>Initial matching profile</b>
-<p>Unity, C#, C++, gameplay systems, Rigidbody physics, object pooling, coroutines, FSMs, event systems, CharacterController, and entry-level/internship roles. Scores are heuristic indicators, not guarantees of eligibility.</p></section>
-</main><script src="/app.js"></script>
-</body></html>
+<section class="note"><b>Matching profile</b><p>Unity, C#, C++, gameplay systems, Rigidbody physics, object pooling, coroutines, FSMs, event systems, CharacterController, and entry-level/internship roles. Scores are heuristic indicators, not guarantees of eligibility.</p>
+<p>Public API listings are attributed to <a href="https://himalayas.app" target="_blank" rel="noopener">Himalayas</a>. Use each original application link. Job-board links above open their own search pages.</p></section>
+</main><script src="/app.js"></script></body></html>
