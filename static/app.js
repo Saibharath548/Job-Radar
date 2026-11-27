@@ -16,7 +16,7 @@ async function load(){
 async function setStatus(id,status){await fetch('/api/jobs/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});load()}
 $('#discoverBtn').addEventListener('click',async()=>{const b=$('#discoverBtn'),m=$('#discoverMessage');b.disabled=true;b.textContent='Searching…';m.textContent='Checking public job listings. This may take a few seconds.';
  try{const r=await fetch('/api/discover',{method:'POST'}),d=await r.json();if(!r.ok)throw new Error(d.error||'Discovery failed');
- m.textContent=`Himalayas: added ${d.added} new jobs; ${d.duplicates} duplicates skipped.`+(d.errors?.length?' Some searches failed: '+d.errors.join(' | '):'');await load();
+ const summary=(d.sources||[]).map(s=>s.source+': added '+s.added+'; '+s.duplicates+' duplicates').join(' · ');m.textContent=(summary||'No feed results returned.')+(d.errors?.length?' Errors: '+d.errors.join(' | '):'');await load();
  }catch(e){m.textContent='Could not complete discovery: '+e.message}
  finally{b.disabled=false;b.textContent='Discover jobs now'}});
 $('#jobForm').addEventListener('submit',async e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.target));const r=await fetch('/api/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});if(r.ok){e.target.reset();load()}else alert((await r.json()).error||'Could not add job')});
