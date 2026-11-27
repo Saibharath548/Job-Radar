@@ -4,11 +4,12 @@ from urllib.parse import urlparse, urlencode
 from datetime import datetime, timezone
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
-import json, re, sqlite3, html, os
+import json, re, sqlite3, html, os, xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).parent
 DB = ROOT / "jobradar.db"
 HIMALAYAS_API = "https://himalayas.app/jobs/api/search"
+WORK_WITH_INDIES_FEED = "https://www.workwithindies.com/careers/rss.xml"
 SEARCH_TERMS = ["Unity Developer", "Gameplay Programmer", "Game Developer"]
 PROFILE = {
     "roles": ["Unity Developer", "Gameplay Programmer", "Game Developer",
@@ -85,6 +86,41 @@ def discover_himalayas():
     return {"source": "Himalayas", "added": added, "duplicates": duplicates,
             "errors": errors, "searched_terms": SEARCH_TERMS}
 
+def discover_work_with_indies():
+    con = db()
+    added, duplicates = 0, 0
+    req = Request(WORK_WITH_INDIES_FEED, headers={
+        'User-Agent': 'JobRadar/0.3 (personal job discovery dashboard)',
+        'Accept': 'application/rss+xml, application/xml, text/xml'})
+    with urlopen(req, timeout=20) as response:
+        root = ET.fromstring(response.read())
+    for item in root.findall('.//item'):
+        title = clean_text(item.findtext('title', default=''))
+        url = (item.findtext('link', default='') or '').strip()
+        description = clean_text(item.findtext('description', default=''))
+        if not title or not url:
+            continue
+        match = re.match(r'(.+?)\\s+is hiring\\b', title, re.I)
+        company = clean_text(match.group(1)) if match else 'Work With Indies listing'
+        cur = con.execute('''INSERT OR IGNORE INTO jobs
+            (title, company, location, source, url, description, status, created_at)
+            VALUES (?, ?, '', 'Work With Indies', ?, ?, 'New', ?)''',
+            (title, company, url, description, datetime.now(timezone.utc).isoformat()))
+        if cur.rowcount: added += 1
+        else: duplicates += 1
+    con.commit()
+    con.close()
+    return {'source': 'Work With Indies', 'added': added, 'duplicates': duplicates}
+
+def discover_all():
+    results, errors = [], []
+    for discoverer in (discover_himalayas, discover_work_with_indies):
+        try: results.append(discoverer())
+        except Exception as exc: errors.append(discoverer.__name__ + ': ' + str(exc))
+    return {'added': sum(x.get('added', 0) for x in results),
+            'duplicates': sum(x.get('duplicates', 0) for x in results),
+            'sources': results, 'errors': errors}
+
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT / "static"), **kwargs)
@@ -114,7 +150,7 @@ class Handler(SimpleHTTPRequestHandler):
         path = urlparse(self.path).path
         if path == "/api/discover":
             try:
-                return self.send_json(discover_himalayas())
+                return self.send_json(discover_all())
             except Exception as exc:
                 return self.send_json({"error": str(exc)}, 502)
         if path != "/api/jobs":
