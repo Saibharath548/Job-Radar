@@ -39,3 +39,10 @@ This repository includes a `render.yaml` Blueprint. To deploy:
 4. Wait for the first deploy to finish; Render will show the public `onrender.com` URL.
 
 The free web service sleeps after 15 minutes without traffic and can take about a minute to wake. Free services have an ephemeral filesystem: the SQLite database can be lost when the service restarts, sleeps, or redeploys. This deployment is therefore a demo, not durable personal job storage. A persistent database needs a separate database setup; do not store sensitive application notes in this demo.
+
+
+## Gmail job alerts (planned integration boundary)
+
+JobRadar's Render service does not inherit ChatGPT's connected Gmail permission. The Gmail connector available inside ChatGPT can search the user's inbox in this chat, but it does not provide Render with an OAuth token or unattended access. A direct Gmail-to-Render integration must be configured separately using Google OAuth consent, a server-side refresh token stored in Render environment secrets, minimal read-only Gmail scopes, and an explicit opt-in. Do not paste passwords, OAuth tokens, or verification codes into this repository.
+
+Email imports should accept only job-alert messages, parse LinkedIn job cards and Internshala HTML digests, extract individual application URLs, filter unrelated roles, and deduplicate by the canonical job URL. Indeed, Naukri, and Hitmarker need real job-alert messages before their email formats can be validated. No email is sent, deleted, or modified by the importer.
