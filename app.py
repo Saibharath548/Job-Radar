@@ -100,7 +100,7 @@ def discover_work_with_indies():
         description = clean_text(item.findtext('description', default=''))
         if not title or not url:
             continue
-        match = re.match(r'(.+?)\\s+is hiring\\b', title, re.I)
+        match = re.match(r'(.+?)\s+is hiring\b', title, re.I)
         company = clean_text(match.group(1)) if match else 'Work With Indies listing'
         cur = con.execute('''INSERT OR IGNORE INTO jobs
             (title, company, location, source, url, description, status, created_at)
