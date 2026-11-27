@@ -4,7 +4,7 @@ from urllib.parse import urlparse, urlencode
 from datetime import datetime, timezone
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
-import json, re, sqlite3, html
+import json, re, sqlite3, html, os
 
 ROOT = Path(__file__).parent
 DB = ROOT / "jobradar.db"
@@ -151,4 +151,4 @@ class Handler(SimpleHTTPRequestHandler):
 if __name__ == "__main__":
     db().close()
     print("JobRadar running at http://127.0.0.1:8000")
-    ThreadingHTTPServer(("127.0.0.1", 8000), Handler).serve_forever()
+    port = int(os.environ.get("PORT", "8000"))\n    ThreadingHTTPServer(("0.0.0.0", port), Handler).serve_forever()
