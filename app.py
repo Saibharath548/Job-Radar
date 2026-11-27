@@ -112,6 +112,53 @@ def discover_work_with_indies():
     con.close()
     return {'source': 'Work With Indies', 'added': added, 'duplicates': duplicates}
 
+
+def is_relevant_job(title, description=""):
+    text = (title + " " + description).lower()
+    role_terms = [
+        "unity", "unreal", "game developer", "game programmer",
+        "gameplay programmer", "gameplay engineer", "game development",
+        "game designer", "level designer", "technical artist",
+        "technical designer", "game artist", "3d artist", "2d artist",
+        "environment artist", "character artist", "game animator",
+        "game tester", "qa tester", "quality assurance", "graphics programmer",
+        "rendering engineer", "tools programmer", "engine programmer",
+        "c++ developer", "c# developer"
+    ]
+    exclude_terms = [
+        "sales", "business development", "financial", "finance", "accounting",
+        "human resources", "recruiter", "marketing", "customer support",
+        "field sales", "medical", "healthcare", "counsellor", "counselor"
+    ]
+    return any(term in text for term in role_terms) and not any(
+        term in title.lower() for term in exclude_terms
+    )
+
+def import_email_job(con, title, company, location, source, url, description):
+    title = clean_text(title)
+    company = clean_text(company)
+    location = clean_text(location)
+    description = clean_text(description)
+    url = (url or "").strip()
+    if not title or not url or not is_relevant_job(title, description):
+        return "filtered"
+    cur = con.execute("""INSERT OR IGNORE INTO jobs
+        (title, company, location, source, url, description, status, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, 'New', ?)""",
+        (title, company, location, source, url, description,
+         datetime.now(timezone.utc).isoformat()))
+    return "added" if cur.rowcount else "duplicate"
+
+def discover_email_alerts():
+    results = []
+    # Gmail is connected to ChatGPT, not to this Render service. This endpoint
+    # intentionally accepts only parsed, user-authorized job-alert records.
+    # A production OAuth flow will be required for unattended Gmail sync.
+    return {"source": "Email alerts", "added": 0, "duplicates": 0,
+            "status": "Gmail OAuth connection not configured for Render",
+            "message": "Gmail connected to ChatGPT does not grant Render access to the inbox."}
+
+
 def discover_all():
     results, errors = [], []
     for discoverer in (discover_himalayas, discover_work_with_indies):
