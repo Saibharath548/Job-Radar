@@ -34,7 +34,7 @@ def db():
 
 def clean_text(value):
     value = re.sub(r"<[^>]+>", " ", value or "")
-    return html.unescape(re.sub(r"\\s+", " ", value)).strip()
+    return html.unescape(re.sub(r"\s+", " ", value)).strip()
 
 def score(job):
     text = (job["title"] + " " + job["description"]).lower()
@@ -137,7 +137,7 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_json({"error": str(exc)}, 400)
 
     def do_PATCH(self):
-        match = re.fullmatch(r"/api/jobs/(\\d+)", urlparse(self.path).path)
+        match = re.fullmatch(r"/api/jobs/(\d+)", urlparse(self.path).path)
         if not match:
             return self.send_json({"error": "Not found"}, 404)
         data = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))
