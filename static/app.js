@@ -1,7 +1,10 @@
 const $=s=>document.querySelector(s);
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 async function load(){
- const res=await fetch('/api/jobs'),jobs=await res.json();
+ const [res,statsRes]=await Promise.all([fetch('/api/jobs'),fetch('/api/stats')]);
+ const jobs=await res.json(),stats=await statsRes.json();
+ $('#sourceTotal').textContent=stats.total+' total records';
+ $('#sourceCounts').innerHTML=Object.entries(stats.sources).map(([name,count])=>`<div class="source-count"><span>${esc(name)}</span><strong>${count}</strong></div>`).join('');
  $('#total').textContent=jobs.length;$('#strong').textContent=jobs.filter(j=>j.match>=70).length;
  $('#progress').textContent=jobs.filter(j=>['Applied','Interview','Follow-up'].includes(j.status)).length;
  const q=$('#search').value.toLowerCase();
