@@ -29,3 +29,13 @@ Match scores are keyword heuristics, not an AI judgment or a guarantee of eligib
 
 ## Privacy and safety
 Job data is stored in a local SQLite database. The database, virtual environments, Python caches, and .env files are excluded from Git. Do not commit credentials, private email contents, or personal application notes to a public repository.
+
+
+## Deploy on Render (free prototype)
+This repository includes a `render.yaml` Blueprint. To deploy:
+1. Create or sign in to a Render account.
+2. Connect your GitHub account and authorize access to this public repository.
+3. In Render, choose **New → Blueprint**, select `Saibharath548/Job-Radar`, and apply the Blueprint.
+4. Wait for the first deploy to finish; Render will show the public `onrender.com` URL.
+
+The free web service sleeps after 15 minutes without traffic and can take about a minute to wake. Free services have an ephemeral filesystem: the SQLite database can be lost when the service restarts, sleeps, or redeploys. This deployment is therefore a demo, not durable personal job storage. A persistent database needs a separate database setup; do not store sensitive application notes in this demo.
