@@ -151,4 +151,5 @@ class Handler(SimpleHTTPRequestHandler):
 if __name__ == "__main__":
     db().close()
     print("JobRadar running at http://127.0.0.1:8000")
-    port = int(os.environ.get("PORT", "8000"))\n    ThreadingHTTPServer(("0.0.0.0", port), Handler).serve_forever()
+    port = int(os.environ.get("PORT", "8000"))
+    ThreadingHTTPServer(("0.0.0.0", port), Handler).serve_forever()
