@@ -1,12 +1,15 @@
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlencode
 from datetime import datetime, timezone
-import json, re, sqlite3
+from urllib.request import Request, urlopen
+from urllib.error import URLError, HTTPError
+import json, re, sqlite3, html
 
 ROOT = Path(__file__).parent
 DB = ROOT / "jobradar.db"
-
+HIMALAYAS_API = "https://himalayas.app/jobs/api/search"
+SEARCH_TERMS = ["Unity Developer", "Gameplay Programmer", "Game Developer"]
 PROFILE = {
     "roles": ["Unity Developer", "Gameplay Programmer", "Game Developer",
               "Game Programmer Intern", "Technical Artist"],
@@ -23,9 +26,15 @@ def db():
     con.execute("""CREATE TABLE IF NOT EXISTS jobs (
         id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL,
         company TEXT DEFAULT '', location TEXT DEFAULT '', source TEXT DEFAULT 'Manual',
-        url TEXT DEFAULT '', description TEXT DEFAULT '', status TEXT DEFAULT 'New',
-        created_at TEXT NOT NULL, UNIQUE(url))""")
+        url TEXT UNIQUE, description TEXT DEFAULT '', status TEXT DEFAULT 'New',
+        created_at TEXT NOT NULL)""")
+    # Empty URLs should not collide with each other under SQLite UNIQUE constraints.
+    con.execute("UPDATE jobs SET url=NULL WHERE url=''")
     return con
+
+def clean_text(value):
+    value = re.sub(r"<[^>]+>", " ", value or "")
+    return html.unescape(re.sub(r"\\s+", " ", value)).strip()
 
 def score(job):
     text = (job["title"] + " " + job["description"]).lower()
@@ -36,6 +45,46 @@ def score(job):
     if any(s in text for s in PROFILE["senior"]): points -= 35
     return max(0, min(100, points)), hits
 
+def discover_himalayas():
+    con = db()
+    added, duplicates, errors = 0, 0, []
+    seen = set()
+    for term in SEARCH_TERMS:
+        params = urlencode({"q": term, "country": "IN", "sort": "recent", "page": 1})
+        req = Request(HIMALAYAS_API + "?" + params,
+                      headers={"User-Agent": "JobRadar/0.2 (personal job discovery dashboard)",
+                               "Accept": "application/json"})
+        try:
+            with urlopen(req, timeout=20) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+            for item in payload.get("jobs", []):
+                url = item.get("applicationLink") or ""
+                if not url or url in seen:
+                    continue
+                seen.add(url)
+                title = clean_text(item.get("title", ""))
+                description = clean_text(item.get("description") or item.get("excerpt") or "")
+                if not title:
+                    continue
+                restrictions = item.get("locationRestrictions") or []
+                location = ", ".join(restrictions) if restrictions else "Worldwide / remote"
+                company = clean_text(item.get("companyName", ""))
+                cur = con.execute("""INSERT OR IGNORE INTO jobs
+                    (title, company, location, source, url, description, status, created_at)
+                    VALUES (?, ?, ?, 'Himalayas', ?, ?, 'New', ?)""",
+                    (title, company, location, url, description,
+                     datetime.now(timezone.utc).isoformat()))
+                if cur.rowcount:
+                    added += 1
+                else:
+                    duplicates += 1
+        except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
+            errors.append(term + ": " + str(exc))
+    con.commit()
+    con.close()
+    return {"source": "Himalayas", "added": added, "duplicates": duplicates,
+            "errors": errors, "searched_terms": SEARCH_TERMS}
+
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT / "static"), **kwargs)
@@ -43,7 +92,7 @@ class Handler(SimpleHTTPRequestHandler):
     def send_json(self, data, status=200):
         raw = json.dumps(data).encode()
         self.send_response(status)
-        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(raw)))
         self.end_headers()
         self.wfile.write(raw)
@@ -62,7 +111,13 @@ class Handler(SimpleHTTPRequestHandler):
         return super().do_GET()
 
     def do_POST(self):
-        if urlparse(self.path).path != "/api/jobs":
+        path = urlparse(self.path).path
+        if path == "/api/discover":
+            try:
+                return self.send_json(discover_himalayas())
+            except Exception as exc:
+                return self.send_json({"error": str(exc)}, 502)
+        if path != "/api/jobs":
             return self.send_json({"error": "Not found"}, 404)
         try:
             data = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))
@@ -73,7 +128,7 @@ class Handler(SimpleHTTPRequestHandler):
                 (title, company, location, source, url, description, status, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, 'New', ?)""",
                 (data["title"], data.get("company", ""), data.get("location", ""),
-                 data.get("source", "Manual"), data.get("url", ""),
+                 data.get("source", "Manual"), data.get("url") or None,
                  data.get("description", ""), datetime.now(timezone.utc).isoformat()))
             con.commit()
             con.close()
@@ -82,7 +137,7 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_json({"error": str(exc)}, 400)
 
     def do_PATCH(self):
-        match = re.fullmatch(r"/api/jobs/(\d+)", urlparse(self.path).path)
+        match = re.fullmatch(r"/api/jobs/(\\d+)", urlparse(self.path).path)
         if not match:
             return self.send_json({"error": "Not found"}, 404)
         data = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))
