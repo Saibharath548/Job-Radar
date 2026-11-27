@@ -4,8 +4,8 @@ A free-first personal dashboard for discovering and tracking game-development op
 
 ## Current features
 - Manual job entry, search, match scoring, duplicate prevention, and application status tracking.
-- One-click discovery from the public Himalayas Remote Jobs API (searches Unity Developer, Gameplay Programmer, and Game Developer roles with India eligibility).
-- Direct search links for LinkedIn, Indeed India, Naukri, Internshala, and Hitmarker.
+- One-click discovery from the public Himalayas Remote Jobs API and Work With Indies RSS feed.
+- Direct search links for LinkedIn, Indeed India, Naukri, Internshala, Hitmarker, and Work With Indies.
 - SQLite storage; no third-party Python packages required.
 
 ## Run locally
@@ -18,9 +18,9 @@ python app.py
 Open http://127.0.0.1:8000.
 
 ## Automatic discovery and platform limits
-The Discover jobs button queries the Himalayas public JSON API from the Python backend, filters by India, and saves results. The API requires no key. JobRadar displays a visible Himalayas source link and keeps the API's applicationLink unchanged, as required by its API terms. See https://himalayas.app/docs/remote-jobs-api.
+The Discover jobs button queries the Himalayas public JSON API (Unity Developer, Gameplay Programmer, and Game Developer; India eligibility) and the Work With Indies RSS feed. New listings are de-duplicated by application URL and attributed to their source. Himalayas API documentation: https://himalayas.app/docs/remote-jobs-api. Work With Indies: https://www.workwithindies.com/.
 
-LinkedIn, Indeed, Naukri, Internshala, and Hitmarker are currently provided as direct search links, not crawled or automatically imported. Their general job-search pages do not provide a universally available public API for this use. Future integrations should use authorized partner APIs, permitted feeds, or job-alert emails the user explicitly connects. This project does not bypass logins, scrape restricted pages, or submit applications automatically.
+LinkedIn, Indeed, Naukri, Internshala, and Hitmarker are currently direct search links, not automatic imports. Their job-data access is restricted or lacks a generally available public search API. Future integrations should use permitted feeds, authorized APIs, or job-alert emails the user explicitly connects. This project does not bypass logins, scrape restricted pages, or submit applications automatically.
 
 ## Matching profile
 The initial heuristic profile is based on the user's resume: entry-level Gameplay Programmer; Unity 2D/3D; C#, C++; gameplay systems; FSM, Singleton, object pooling, event systems, coroutines, physics-based mechanics, Rigidbody movement, CharacterController, UI interaction and animation. Projects include Magnet Maniac, Bubble Rush (Global Game Jam 2025), and an FPS prototype. The resume lists a two-month Unity Developer internship and expected graduation in 2027.
