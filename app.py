@@ -142,6 +142,15 @@ class Handler(SimpleHTTPRequestHandler):
             for row in rows:
                 row["match"], row["matched_skills"] = score(row)
             return self.send_json(rows)
+        if path == "/api/stats":
+            con = db()
+            rows = con.execute("SELECT source, COUNT(*) AS count FROM jobs GROUP BY source ORDER BY count DESC, source ASC").fetchall()
+            total = con.execute("SELECT COUNT(*) FROM jobs").fetchone()[0]
+            con.close()
+            counts = {row["source"] or "Unknown": row["count"] for row in rows}
+            for source in ("Himalayas", "Work With Indies", "LinkedIn", "Indeed", "Naukri", "Internshala", "Hitmarker", "Manual"):
+                counts.setdefault(source, 0)
+            return self.send_json({"total": total, "sources": counts})
         if path == "/api/profile":
             return self.send_json(PROFILE)
         return super().do_GET()
